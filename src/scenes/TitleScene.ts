@@ -4,12 +4,13 @@ import { Audio } from '../Audio';
 type Mode = 'title' | 'mode_select';
 export type GameMode = 'novice' | 'expert';
 
-interface Star {
+interface Dot {
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   r: number;
-  twinkle: number;
-  speed: number;
+  color: string;
 }
 
 export class TitleScene {
@@ -17,24 +18,27 @@ export class TitleScene {
   selectedMode: GameMode = 'novice';
 
   private mode: Mode = 'title';
-  private stars: Star[] = [];
+  private dots: Dot[] = [];
   private enterHover = false;
   private noviceHover = false;
   private expertHover = false;
   private time = 0;
-  private enterBtnRect = { x: 421, y: 420, w: 182, h: 50 };
-  private noviceBtnRect = { x: 300, y: 380, w: 182, h: 50 };
-  private expertBtnRect = { x: 542, y: 380, w: 182, h: 50 };
+  private enterBtnRect = { x: 421, y: 430, w: 182, h: 52 };
+  private noviceBtnRect = { x: 280, y: 390, w: 200, h: 54 };
+  private expertBtnRect = { x: 544, y: 390, w: 200, h: 54 };
   private musicStarted = false;
 
+  private dotColors = ['#ff4500', '#ff8c00', '#1e90ff', '#00c853', '#9c27b0', '#e91e63'];
+
   constructor(private audio: Audio) {
-    for (let i = 0; i < 150; i++) {
-      this.stars.push({
+    for (let i = 0; i < 28; i++) {
+      this.dots.push({
         x: Math.random() * 1024,
         y: Math.random() * 768,
-        r: 0.5 + Math.random() * 2,
-        twinkle: Math.random() * Math.PI * 2,
-        speed: 0.02 + Math.random() * 0.04,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        r: 4 + Math.random() * 14,
+        color: this.dotColors[Math.floor(Math.random() * this.dotColors.length)],
       });
     }
 
@@ -93,8 +97,13 @@ export class TitleScene {
       this.audio.play('backmusic', true);
     }
 
-    for (const s of this.stars) {
-      s.twinkle += s.speed;
+    for (const d of this.dots) {
+      d.x += d.vx;
+      d.y += d.vy;
+      if (d.x < -d.r) d.x = 1024 + d.r;
+      if (d.x > 1024 + d.r) d.x = -d.r;
+      if (d.y < -d.r) d.y = 768 + d.r;
+      if (d.y > 768 + d.r) d.y = -d.r;
     }
 
     if (input.wasPressed('Enter') || input.wasPressed('Space')) {
@@ -114,78 +123,86 @@ export class TitleScene {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = '#000008';
+    ctx.fillStyle = '#f0f2f5';
     ctx.fillRect(0, 0, 1024, 768);
 
-    for (const s of this.stars) {
-      const alpha = 0.4 + 0.6 * ((Math.sin(s.twinkle) + 1) / 2);
+    for (const d of this.dots) {
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = d.color;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
-    const pulse = Math.sin(this.time * 0.03) * 0.15 + 0.85;
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.08)';
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 8;
+    const cardX = 262, cardY = 90, cardW = 500, cardH = 480;
+    ctx.beginPath();
+    ctx.rect(cardX, cardY, cardW, cardH);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    const accentH = 8;
+    const grad = ctx.createLinearGradient(cardX, 0, cardX + cardW, 0);
+    grad.addColorStop(0, '#ff4500');
+    grad.addColorStop(0.5, '#ff8c00');
+    grad.addColorStop(1, '#1e90ff');
+    ctx.fillStyle = grad;
+    ctx.fillRect(cardX, cardY, cardW, accentH);
 
     ctx.save();
     ctx.textAlign = 'center';
 
-    ctx.font = 'bold 68px monospace';
-    const glowAlpha = 0.4 + 0.3 * Math.sin(this.time * 0.04);
-    ctx.shadowColor = '#ff8800';
-    ctx.shadowBlur = 30 * pulse;
-    ctx.fillStyle = '#ff6600';
-    ctx.fillText('ZORG88', 512, 160);
+    ctx.font = 'bold 72px monospace';
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillText('ZORG88', 512, 220);
 
-    ctx.shadowColor = '#0088ff';
-    ctx.shadowBlur = 20;
-    ctx.font = 'bold 42px monospace';
-    ctx.fillStyle = '#88ccff';
-    ctx.fillText('SPACE LANDER', 512, 220);
+    ctx.font = 'bold 28px monospace';
+    const subGrad = ctx.createLinearGradient(350, 0, 674, 0);
+    subGrad.addColorStop(0, '#ff4500');
+    subGrad.addColorStop(1, '#1e90ff');
+    ctx.fillStyle = subGrad;
+    ctx.fillText('SPACE LANDER', 512, 265);
 
-    ctx.shadowBlur = 0;
-    ctx.font = '16px monospace';
-    ctx.fillStyle = `rgba(100,180,255,${glowAlpha})`;
-    ctx.fillText('A game of skill and survival', 512, 265);
+    ctx.fillStyle = '#888';
+    ctx.font = '15px monospace';
+    ctx.fillText('A game of skill and survival', 512, 298);
 
-    this.drawLanderDeco(ctx, 512, 330, this.time);
+    this.drawLanderDeco(ctx, 512, 360);
 
     if (this.mode === 'title') {
-      const bAlpha = 0.7 + 0.3 * Math.sin(this.time * 0.06);
-      this.drawButton(ctx, this.enterBtnRect, 'ENTER', this.enterHover, `rgba(0,200,120,${bAlpha})`);
-
-      ctx.font = '13px monospace';
-      ctx.fillStyle = 'rgba(120,120,120,0.8)';
-      ctx.fillText('or press ENTER / SPACE', 512, 490);
-    } else {
-      ctx.shadowColor = '#ffaa00';
-      ctx.shadowBlur = 10;
-      ctx.font = 'bold 24px monospace';
-      ctx.fillStyle = '#ffdd88';
-      ctx.fillText('SELECT DIFFICULTY', 512, 340);
-      ctx.shadowBlur = 0;
-
-      this.drawButton(ctx, this.noviceBtnRect, '[N] NOVICE', this.noviceHover, '#00cc66');
-      this.drawButton(ctx, this.expertBtnRect, '[E] EXPERT', this.expertHover, '#ff4422');
-
+      this.drawFlatButton(ctx, this.enterBtnRect, 'PLAY', this.enterHover, '#1e90ff');
       ctx.font = '12px monospace';
-      ctx.fillStyle = 'rgba(120,200,120,0.8)';
-      ctx.fillText('More fuel · Slower gravity · Fewer hazards', this.noviceBtnRect.x + 91, 450);
-      ctx.fillStyle = 'rgba(255,120,80,0.8)';
-      ctx.fillText('Less fuel · Faster gravity · More hazards', this.expertBtnRect.x + 91, 450);
+      ctx.fillStyle = '#aaa';
+      ctx.fillText('or press ENTER / SPACE', 512, 510);
+    } else {
+      ctx.font = 'bold 18px monospace';
+      ctx.fillStyle = '#333';
+      ctx.fillText('SELECT DIFFICULTY', 512, 360);
+
+      this.drawFlatButton(ctx, this.noviceBtnRect, '[N] NOVICE', this.noviceHover, '#00c853');
+      this.drawFlatButton(ctx, this.expertBtnRect, '[E] EXPERT', this.expertHover, '#f44336');
+
+      ctx.font = '11px monospace';
+      ctx.fillStyle = '#777';
+      ctx.fillText('More fuel  ·  Slower fall', this.noviceBtnRect.x + 100, 462);
+      ctx.fillText('Less fuel  ·  Faster fall', this.expertBtnRect.x + 100, 462);
     }
 
-    ctx.font = '11px monospace';
-    ctx.fillStyle = 'rgba(80,80,80,0.7)';
-    ctx.fillText('Arrow keys: thrust & rotate  |  M: mute music', 512, 740);
-
     ctx.restore();
+
+    ctx.font = '11px monospace';
+    ctx.fillStyle = '#bbb';
+    ctx.textAlign = 'center';
+    ctx.fillText('↑ Thrust   ← → Rotate   M: Mute', 512, 740);
   }
 
-  private drawButton(
+  private drawFlatButton(
     ctx: CanvasRenderingContext2D,
     r: { x: number; y: number; w: number; h: number },
     label: string,
@@ -193,62 +210,75 @@ export class TitleScene {
     color: string
   ): void {
     ctx.save();
-    ctx.shadowColor = color;
-    ctx.shadowBlur = hover ? 20 : 8;
+    ctx.shadowColor = hover ? color : 'rgba(0,0,0,0.1)';
+    ctx.shadowBlur = hover ? 18 : 4;
+    ctx.shadowOffsetY = hover ? 4 : 2;
+
+    ctx.fillStyle = hover ? color : '#ffffff';
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
-    ctx.strokeRect(r.x, r.y, r.w, r.h);
+    ctx.beginPath();
+    ctx.rect(r.x, r.y, r.w, r.h);
+    ctx.fill();
+    ctx.stroke();
 
-    if (hover) {
-      ctx.globalAlpha = 0.15;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.globalAlpha = 1;
-    }
-
-    ctx.shadowBlur = hover ? 12 : 0;
-    ctx.font = 'bold 16px monospace';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.font = 'bold 15px monospace';
     ctx.fillStyle = hover ? '#ffffff' : color;
     ctx.textAlign = 'center';
-    ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + 6);
+    ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + 5);
     ctx.restore();
   }
 
-  private drawLanderDeco(ctx: CanvasRenderingContext2D, x: number, y: number, t: number): void {
-    const bobY = Math.sin(t * 0.04) * 5;
-    ctx.save();
-    ctx.translate(x, y + bobY);
+  private drawLanderDeco(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    const bob = Math.sin(this.time * 0.04) * 4;
+    const thrustOn = Math.floor(this.time / 18) % 4 !== 0;
 
-    const thrustOn = Math.floor(t / 20) % 3 !== 0;
+    ctx.save();
+    ctx.translate(x, y + bob);
+
     if (thrustOn) {
-      ctx.fillStyle = `rgba(255, ${100 + Math.random() * 80}, 0, 0.8)`;
+      ctx.fillStyle = `rgba(255, ${100 + Math.floor(Math.random() * 80)}, 0, 0.85)`;
       ctx.beginPath();
-      ctx.moveTo(-5, 14);
-      ctx.lineTo(5, 14);
-      ctx.lineTo(0, 28 + Math.random() * 8);
+      ctx.moveTo(-6, 15);
+      ctx.lineTo(6, 15);
+      ctx.lineTo(0, 30 + Math.random() * 8);
       ctx.closePath();
       ctx.fill();
     }
 
     ctx.beginPath();
-    ctx.moveTo(0, -16);
-    ctx.lineTo(-12, 12);
-    ctx.lineTo(12, 12);
+    ctx.moveTo(0, -18);
+    ctx.lineTo(-13, 13);
+    ctx.lineTo(13, 13);
     ctx.closePath();
-    ctx.fillStyle = '#cccccc';
+    ctx.fillStyle = '#1a1a2e';
     ctx.fill();
-    ctx.strokeStyle = '#888888';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
 
-    ctx.strokeStyle = '#aaaaaa';
+    ctx.strokeStyle = '#555';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(-12, 12);
-    ctx.lineTo(-18, 20);
-    ctx.moveTo(12, 12);
-    ctx.lineTo(18, 20);
+    ctx.moveTo(-13, 13);
+    ctx.lineTo(-20, 22);
+    ctx.moveTo(13, 13);
+    ctx.lineTo(20, 22);
     ctx.stroke();
+
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-20, 22);
+    ctx.lineTo(-27, 22);
+    ctx.moveTo(20, 22);
+    ctx.lineTo(27, 22);
+    ctx.stroke();
+
+    ctx.fillStyle = '#1e90ff';
+    ctx.beginPath();
+    ctx.arc(0, -4, 4, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
