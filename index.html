@@ -6,6 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>" />
   <title>:::ZORG88:::SPACE LANDER:::</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,6 +16,14 @@
 </head>
 <body>
   <canvas id="canvas"></canvas>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(function(reg) {
+        // Force immediate activation so the SW controls this page right away
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }).catch(function() {});
+    }
+  </script>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

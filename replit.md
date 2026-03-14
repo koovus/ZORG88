@@ -62,3 +62,9 @@ public/
 - Terrain generated with a seeded RNG per level (seed = level × 7)
 - 5 levels before victory; each level increases hazard count/speed
 - Vite HMR active during development (no manual refresh needed)
+
+## Cache / Old Game Prevention
+The original Python server served the old GameMaker game at `/` (via `os.chdir('ZORG88-LANDER')`). Browser and proxy caches held onto the old HTML and `LunarLander3.js`. Three layers of defense prevent the old game from loading:
+1. **Vite middleware** — redirects any request for `LunarLander3.js` to `/`
+2. **Service Worker** (`public/sw.js`) — intercepts `LunarLander3.js` requests at the browser level (even cached ones) and returns empty JS
+3. **`Clear-Site-Data: "cache"` header** — every Vite response tells the browser to evict all cached content for the origin, ensuring the old game's HTML/JS cannot persist in cache
