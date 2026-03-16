@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "f_8ktrH6-_j8dY9ED_6fH"
+uri = "file://README.md"
+type = "text"
+title = "ZORG88 Space Lander — README"
